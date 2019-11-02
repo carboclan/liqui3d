@@ -12,11 +12,13 @@ import CopyIcon from "../../components/ui/CopyIcon";
 import Button from "../../components/ui/Button";
 import {TRANSFER} from "../../constants/routes";
 import QRIcon from "../../components/QRIcon";
+import RewardTable from './RewardTable';
 
 enum Tabs {
   Balances = 'Balances',
   Deposits = 'Deposits',
   Withdrawals = 'Withdrawals',
+  MiningRewards = 'MiningRewards',
 }
 
 type StateProps = {
@@ -82,6 +84,12 @@ class WalletTable extends Component<Props, State> {
             >
               Balances
             </ModuleHeaderButton>
+            <ModuleHeaderButton
+              onClick={() => this.setState({ currentTab: Tabs.MiningRewards})}
+              active={currentTab === Tabs.MiningRewards}
+            >
+              Mining Rewards
+            </ModuleHeaderButton>
           </ModuleHeader>
           <ModuleContent>
             { this.renderTable() }
@@ -95,6 +103,8 @@ class WalletTable extends Component<Props, State> {
     switch (this.state.currentTab) {
       case Tabs.Balances:
         return <BalanceTable />;
+      case Tabs.MiningRewards:
+        return <RewardTable />;
       default:
         return null;
     }
