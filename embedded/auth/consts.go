@@ -1,6 +1,6 @@
 package auth
 
 const (
-	sessionName = "uex_session"
-	AccountName = "dex-demo"
+	sessionName     = "uex_session"
+	AccountNameFlag = "account"
 )

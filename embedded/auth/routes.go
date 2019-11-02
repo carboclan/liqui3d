@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/spf13/viper"
 	"github.com/tendermint/dex-demo/embedded"
 
 	"github.com/gorilla/mux"
@@ -43,7 +44,8 @@ func loginHandler() http.HandlerFunc {
 			return
 		}
 
-		if req.Username != AccountName {
+		accountName := viper.GetString(AccountNameFlag)
+		if req.Username != accountName {
 			http.Error(w, "Invalid username or password.", http.StatusUnauthorized)
 			return
 		}
@@ -117,11 +119,12 @@ func authorize(passphrase string) (string, string, error) {
 		return "", "", err
 	}
 
-	pk, err := kb.ExportPrivateKeyObject(AccountName, passphrase)
+	accountName := viper.GetString(AccountNameFlag)
+	pk, err := kb.ExportPrivateKeyObject(accountName, passphrase)
 	if err != nil {
 		return "", "", err
 	}
 
 	hotPassphrase := ReadStr32()
-	return ReplaceKB(AccountName, hotPassphrase, pk), hotPassphrase, nil
+	return ReplaceKB(accountName, hotPassphrase, pk), hotPassphrase, nil
 }

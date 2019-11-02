@@ -4,6 +4,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/tendermint/dex-demo/embedded/auth"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -50,6 +52,7 @@ func main() {
 	// Add --chain-id to persistent flags and mark it required
 	rootCmd.PersistentFlags().String(client.FlagChainID, "", "Chain ID of tendermint node")
 	rootCmd.PersistentFlags().Bool(EnableFaucetFlag, false, "Whether to enable faucet functionality.")
+	rootCmd.PersistentFlags().String(auth.AccountNameFlag, "dex-demo", "Account name")
 	rootCmd.PersistentPreRunE = func(_ *cobra.Command, _ []string) error {
 		return initConfig(rootCmd)
 	}
@@ -149,6 +152,9 @@ func initConfig(cmd *cobra.Command) error {
 		return err
 	}
 	if err := viper.BindPFlag(EnableFaucetFlag, cmd.PersistentFlags().Lookup(EnableFaucetFlag)); err != nil {
+		return err
+	}
+	if err := viper.BindPFlag(auth.AccountNameFlag, cmd.PersistentFlags().Lookup(auth.AccountNameFlag)); err != nil {
 		return err
 	}
 	return viper.BindPFlag(cli.OutputFlag, cmd.PersistentFlags().Lookup(cli.OutputFlag))

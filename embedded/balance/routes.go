@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 
 	"github.com/tendermint/dex-demo/types/store"
 
@@ -84,7 +85,8 @@ func faucetHandler(ctx context.CLIContext, cdc *codec.Codec) http.HandlerFunc {
 		username := parts[0]
 		passphrase := parts[1]
 
-		if username != auth.AccountName {
+		accountName := viper.GetString(auth.AccountNameFlag)
+		if username != accountName {
 			http.Error(w, "Invalid username or password.", http.StatusUnauthorized)
 			return
 		}
@@ -95,13 +97,13 @@ func faucetHandler(ctx context.CLIContext, cdc *codec.Codec) http.HandlerFunc {
 			return
 		}
 
-		pk, err := diskKB.ExportPrivateKeyObject(auth.AccountName, passphrase)
+		pk, err := diskKB.ExportPrivateKeyObject(accountName, passphrase)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		kb := auth.NewHotKeybase(auth.AccountName, passphrase, pk)
+		kb := auth.NewHotKeybase(accountName, passphrase, pk)
 		doTransfer(kb, ctx, w, cdc, req.To, req.Amount, req.AssetID, passphrase)
 	}
 }

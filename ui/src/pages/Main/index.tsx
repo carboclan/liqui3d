@@ -1,36 +1,38 @@
+import './main.scss';
+
 import React, { Component, ReactNode } from 'react';
 import { connect } from 'react-redux';
-import { ThunkDispatch } from "redux-thunk";
-import {Switch, Route, Redirect} from 'react-router-dom';
-import AppSidebar from '../../components/AppSiderbar';
+import { Redirect, Route, Switch } from 'react-router-dom';
+import { ThunkDispatch } from 'redux-thunk';
+
 import AppHeader from '../../components/AppHeader';
-import Wallet from "../Wallet";
-import Exchange from '../Exchange';
-import Login from "../Login";
+import AppSidebar from '../../components/AppSiderbar';
+import { Spinner } from '../../components/ui/LoadingIndicator';
 import {
+  CONFIRM_SEEDPHRASE_BACKUP__SOFTWARE,
   CONNECT_WALLET,
   CONNECT_WALLET__SOFTWARE,
   CREATE_WALLET__SOFTWARE,
-  CONFIRM_SEEDPHRASE_BACKUP__SOFTWARE,
   EXCHANGE,
   WALLET
 } from '../../constants/routes';
-import {checkLogin, login} from '../../ducks/user';
-import { ActionType } from "../../ducks/types";
-import { REDUX_STATE } from "../../ducks";
-import './main.scss';
-import {Spinner} from "../../components/ui/LoadingIndicator";
+import { REDUX_STATE } from '../../ducks';
+import { ActionType } from '../../ducks/types';
+import { checkLogin, login } from '../../ducks/user';
+import Exchange from '../Exchange';
+import Login from '../Login';
+import Wallet from '../Wallet';
 
 type StateProps = {
-  isLoggedIn?: boolean
-}
+  isLoggedIn?: boolean;
+};
 
 type DispatchProps = {
-  login: () => void
-  checkLogin: () => void
-}
+  login: () => void;
+  checkLogin: () => void;
+};
 
-type PropsType = StateProps & DispatchProps
+type PropsType = StateProps & DispatchProps;
 
 class Main extends Component<PropsType> {
   componentWillMount() {
@@ -53,7 +55,7 @@ class Main extends Component<PropsType> {
         <AppSidebar />
         <div className="app__body">
           <AppHeader />
-          { isLoggedIn ? this.renderRoutes() : this.renderAuthRoutes() }
+          {isLoggedIn ? this.renderRoutes() : this.renderAuthRoutes()}
         </div>
       </div>
     );
@@ -85,15 +87,20 @@ class Main extends Component<PropsType> {
 
 function mapStateToProps(state: REDUX_STATE): StateProps {
   return {
-    isLoggedIn: state.user.isLoggedIn,
+    isLoggedIn: state.user.isLoggedIn
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<REDUX_STATE, any, ActionType<any>>): DispatchProps {
+function mapDispatchToProps(
+  dispatch: ThunkDispatch<REDUX_STATE, any, ActionType<any>>
+): DispatchProps {
   return {
-    login: () => dispatch(login('password')),
-    checkLogin: () => dispatch(checkLogin()),
+    login: () => dispatch(login('username', 'password')),
+    checkLogin: () => dispatch(checkLogin())
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(Main);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Main);
