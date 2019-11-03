@@ -46,6 +46,14 @@ type OrderCreated struct {
 	CreatedBlock      int64
 }
 
+type OrderClaimed struct {
+	ID                store.EntityID
+	Owner             sdk.AccAddress
+	MarketID          store.EntityID
+	Quantity          sdk.Uint
+	CreatedBlock      int64
+}
+
 type OrderCancelled struct {
 	OrderID store.EntityID
 }

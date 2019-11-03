@@ -84,22 +84,8 @@ func (k Keeper) Post(ctx sdk.Context, owner sdk.AccAddress, mktID store.EntityID
 }
 
 func (k Keeper) Claim(ctx sdk.Context, owner sdk.AccAddress, mktID store.EntityID, quantity sdk.Uint) (types3.Order, sdk.Error) {
-	var err sdk.Error
-	mkt, err := k.marketKeeper.Get(ctx, mktID)
-	if err != nil {
-		return types3.Order{}, err
-	}
 
-	var postedAsset assettypes.Asset
-	var postedAmt sdk.Uint
-
-	if err != nil {
-		// should never happen; implies consensus
-		// or storage bug
-		panic(err)
-	}
-
-	return k.Create(
+	return k.CreateClaim(
 		ctx,
 		owner,
 		mktID,
@@ -128,6 +114,27 @@ func (k Keeper) Create(ctx sdk.Context, owner sdk.AccAddress, marketID store.Ent
 		Price:             order.Price,
 		Quantity:          order.Quantity,
 		TimeInForceBlocks: order.TimeInForceBlocks,
+		CreatedBlock:      order.CreatedBlock,
+	})
+
+	return order, err
+}
+
+func (k Keeper) CreateClaim(ctx sdk.Context, owner sdk.AccAddress, marketID store.EntityID, quantity sdk.Uint) (types3.Order, sdk.Error) {
+	id := k.incrementSeq(ctx)
+	order := types3.Order{
+		ID:                id,
+		Owner:             owner,
+		MarketID:          marketID,
+		Quantity:          quantity,
+		CreatedBlock:      ctx.BlockHeight(),
+	}
+	err := store.SetNotExists(ctx, k.storeKey, k.cdc, orderKey(id), order)
+	_ = k.queue.Publish(types.OrderClaimed{
+		ID:                order.ID,
+		Owner:             order.Owner,
+		MarketID:          order.MarketID,
+		Quantity:          order.Quantity,
 		CreatedBlock:      order.CreatedBlock,
 	})
 

@@ -6,6 +6,7 @@ import (
 	"github.com/tendermint/dex-demo/types"
 	"github.com/tendermint/dex-demo/types/errs"
 	"github.com/tendermint/dex-demo/types/store"
+	"github.com/tendermint/dex-demo/pkg/matcheng"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -78,6 +79,24 @@ func (k Keeper) OnOrderCreatedEvent(event types.OrderCreated) {
 		Status:         "OPEN",
 		Type:           "LIMIT",
 		TimeInForce:    event.TimeInForceBlocks,
+		QuantityFilled: sdk.NewUint(0),
+		CreatedBlock:   event.CreatedBlock,
+	}
+	k.Set(order)
+	k.as.Set(ownerOrderKey(order.Owner, order.ID), order.ID.Bytes())
+}
+
+func (k Keeper) OnOrderClaimedEvent(event types.OrderClaimed) {
+	order := Order{
+		ID:             event.ID,
+		Owner:          event.Owner,
+		MarketID:       event.MarketID,
+		Direction:      matcheng.Bid,
+		Price:          sdk.NewUintFromString("0"),
+		Quantity:       event.Quantity,
+		Status:         "OPEN",
+		Type:           "LIMIT",
+		TimeInForce:    10,
 		QuantityFilled: sdk.NewUint(0),
 		CreatedBlock:   event.CreatedBlock,
 	}
@@ -178,6 +197,8 @@ func (k Keeper) OnEvent(event interface{}) error {
 		return k.OnOrderCancelledEvent(ev)
 	case types.Fill:
 		return k.OnFillEvent(ev)
+	case types.OrderClaimed:
+		k.OnOrderClaimedEvent(ev)
 	}
 
 	return nil
