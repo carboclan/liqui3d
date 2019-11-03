@@ -59,7 +59,7 @@ class List extends Component<PropTypes, State> {
   state = {
     currentTab: ListTab.batch,
     batchLength: 0,
-    time: 10 * 60,
+    time: 0,
   };
 
   tickEvent = setInterval(() => {}, 10000000000);
