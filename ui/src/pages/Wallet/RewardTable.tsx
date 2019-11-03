@@ -54,7 +54,7 @@ class RewardTable extends Component<Props> {
 
   renderTableRow (balance: RewardType): ReactNode {
     const { assets } = this.props;
-    const { assetId, unlocked } = balance;
+    const { assetId, balance:unlocked } = balance;
     const { symbol, decimals, name } = assets[assetId];
 
     return (
