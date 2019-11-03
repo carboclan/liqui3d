@@ -28,3 +28,15 @@ type OrderCreationResponse struct {
 	TimeInForce    uint16                  `json:"time_in_force"`
 	Status         string                  `json:"status"`
 }
+
+type OrderClaimRequest struct {
+	Quantity    sdk.Uint           `json:"quantity"`
+}
+
+type OrderClaimResponse struct {
+	BlockInclusion embedded.BlockInclusion `json:"block_inclusion"`
+	ID             store.EntityID          `json:"id"`
+	MarketID       store.EntityID          `json:"market_id"`
+	Quantity       sdk.Uint                `json:"quantity"`
+	Status         string                  `json:"status"`
+}

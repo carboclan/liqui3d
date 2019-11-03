@@ -83,6 +83,30 @@ func (k Keeper) Post(ctx sdk.Context, owner sdk.AccAddress, mktID store.EntityID
 	)
 }
 
+func (k Keeper) Claim(ctx sdk.Context, owner sdk.AccAddress, mktID store.EntityID, quantity sdk.Uint) (types3.Order, sdk.Error) {
+	var err sdk.Error
+	mkt, err := k.marketKeeper.Get(ctx, mktID)
+	if err != nil {
+		return types3.Order{}, err
+	}
+
+	var postedAsset assettypes.Asset
+	var postedAmt sdk.Uint
+
+	if err != nil {
+		// should never happen; implies consensus
+		// or storage bug
+		panic(err)
+	}
+
+	return k.Create(
+		ctx,
+		owner,
+		mktID,
+		quantity,
+	)
+}
+
 func (k Keeper) Create(ctx sdk.Context, owner sdk.AccAddress, marketID store.EntityID, direction matcheng.Direction, price sdk.Uint, quantity sdk.Uint, tif uint16) (types3.Order, sdk.Error) {
 	id := k.incrementSeq(ctx)
 	order := types3.Order{

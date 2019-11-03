@@ -23,6 +23,7 @@ func RegisterRoutes(ctx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
 	sub := r.PathPrefix("/exchange").Subrouter()
 	sub.Use(auth.DefaultAuthMW)
 	sub.HandleFunc("/orders", postOrderHandler(ctx, cdc)).Methods("POST")
+	sub.HandleFunc("/orders/claim", claimOrderHandler(ctx, cdc)).Methods("POST")
 }
 
 func postOrderHandler(ctx context.CLIContext, cdc *codec.Codec) http.HandlerFunc {
@@ -88,6 +89,80 @@ func postOrderHandler(ctx context.CLIContext, cdc *codec.Codec) http.HandlerFunc
 			Type:        req.Type,
 			TimeInForce: msg.TimeInForce,
 			Status:      "OPEN",
+		}
+
+		out, sdkErr := cdc.MarshalJSON(res)
+		if sdkErr != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, sdkErr.Error())
+			return
+		}
+		if _, err := w.Write(out); err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+		}
+	}
+}
+
+func claimOrderHandler(ctx context.CLIContext, cdc *codec.Codec) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req OrderClaimRequest
+		if !rest.ReadRESTReq(w, r, cdc, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		kb := auth.MustGetKBFromSession(r)
+		owner := kb.GetAddr()
+		ctx = ctx.WithFromAddress(owner)
+
+		marketID := store.NewEntityID(3)
+
+		msg := types.NewMsgClaim(owner, marketID, req.Quantity)
+		msgs := []sdk.Msg{msg}
+		err := msg.ValidateBasic()
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+
+		bldr := sdkauth.NewTxBuilderFromCLI().
+			WithTxEncoder(utils.GetTxEncoder(cdc)).
+			WithKeybase(kb)
+
+		bldr, sdkErr := utils.PrepareTxBuilder(bldr, ctx)
+		if sdkErr != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, sdkErr.Error())
+			return
+		}
+
+		broadcastResB, sdkErr := bldr.BuildAndSign(kb.GetName(), auth.MustGetKBPassphraseFromSession(r), msgs)
+		if sdkErr != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, sdkErr.Error())
+			return
+		}
+		broadcastRes, sdkErr := ctx.BroadcastTxCommit(broadcastResB)
+		if sdkErr != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, sdkErr.Error())
+			return
+		}
+
+		var orderIDStr string
+		for _, log := range broadcastRes.Logs {
+			if strings.HasPrefix(log.Log, "order_id") {
+				orderIDStr = strings.TrimPrefix(log.Log, "order_id:")
+				break
+			}
+		}
+		orderID := store.NewEntityIDFromString(orderIDStr)
+		res := OrderClaimResponse{
+			BlockInclusion: embedded.BlockInclusion{
+				BlockNumber:     broadcastRes.Height,
+				TransactionHash: broadcastRes.TxHash,
+				BlockTimestamp:  broadcastRes.Timestamp,
+			},
+			ID:          orderID,
+			MarketID:    marketID,
+			Quantity:    msg.Quantity,
+			Status:      "Finished",
 		}
 
 		out, sdkErr := cdc.MarshalJSON(res)

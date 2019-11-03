@@ -61,6 +61,30 @@ func GetCmdPost(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+func GetCmdClaim(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "claim [quantity]",
+		Short: "claim an order",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, bldr, err := cliutil.BuildEnsuredCtx(cdc)
+			if err != nil {
+				return err
+			}
+
+			marketID := store.NewEntityIDFromString("3")
+
+			quantity, err := sdk.ParseUint(args[3])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgClaim(ctx.GetFromAddress(), marketID, quantity)
+			return cliutil.ValidateAndBroadcast(ctx, bldr, msg)
+		},
+	}
+}
+
 func GetCmdCancel(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "cancel [order-id]",

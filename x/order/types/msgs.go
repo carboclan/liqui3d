@@ -63,6 +63,46 @@ func (msg MsgPost) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }
 
+type MsgClaim struct {
+	Owner       sdk.AccAddress
+	MarketID    store.EntityID
+	Quantity    sdk.Uint
+}
+
+func NewMsgClaim(owner sdk.AccAddress, marketID store.EntityID, quantity sdk.Uint) MsgClaim {
+	return MsgClaim{
+		Owner:       owner,
+		MarketID:    marketID,
+		Quantity:    quantity,
+	}
+}
+
+func (msg MsgClaim) Route() string {
+	return "order"
+}
+
+func (msg MsgClaim) Type() string {
+	return "claim"
+}
+
+func (msg MsgClaim) ValidateBasic() sdk.Error {
+	if !msg.MarketID.IsDefined() {
+		return sdk.ErrUnauthorized("invalid market ID")
+	}
+	// if msg.Quantity.IsZero() {
+		// return sdk.ErrInvalidCoins("quantity cannot be zero")
+	// }
+	return nil
+}
+
+func (msg MsgClaim) GetSignBytes() []byte {
+	return serde.MustMarshalSortedJSON(msg)
+}
+
+func (msg MsgClaim) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
+}
+
 type MsgCancel struct {
 	Owner   sdk.AccAddress
 	OrderID store.EntityID
