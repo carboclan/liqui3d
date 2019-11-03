@@ -14,6 +14,7 @@ import (
 	"github.com/tendermint/dex-demo/embedded/fill"
 	"github.com/tendermint/dex-demo/embedded/order"
 	"github.com/tendermint/dex-demo/embedded/price"
+	"github.com/tendermint/dex-demo/embedded/reward"
 	"github.com/tendermint/dex-demo/embedded/ui"
 )
 
@@ -28,6 +29,7 @@ func RegisterRoutes(ctx context.CLIContext, r *mux.Router, cdc *codec.Codec, ena
 	fill.RegisterRoutes(ctx, sub, cdc)
 	order.RegisterRoutes(ctx, sub, cdc)
 	balance.RegisterRoutes(ctx, sub, cdc, enableFaucet)
+	reward.RegisterRoutes(ctx, sub, cdc, enableFaucet)
 	price.RegisterRoutes(ctx, sub, cdc)
 	book.RegisterRoutes(ctx, sub, cdc)
 	batch.RegisterRoutes(ctx, sub, cdc)
