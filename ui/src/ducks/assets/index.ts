@@ -30,7 +30,7 @@ export type AssetStateType = {
 
 const initialState: AssetStateType = {
   symbolToAssetId: {
-    BTC: '3',
+    AHH: '3',
     DEMO: '1',
     TEST: '2',
     USD: '4',
@@ -45,12 +45,12 @@ const initialState: AssetStateType = {
       chainId: 'USD',
     },
     '3': {
-      symbol: 'BTC',
-      name: 'Bitcoin',
+      symbol: 'AHH',
+      name: 'Reward Token',
       decimals: 18,
       nativeDecimals: 8,
       sources: [],
-      chainId: 'BTC',
+      chainId: 'AHH',
     },
     '1': {
       symbol: 'DEMO',
