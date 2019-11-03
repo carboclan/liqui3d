@@ -71,10 +71,16 @@ class List extends Component<PropTypes, State> {
   componentDidUpdate() {
     let newLength = Object.keys(this.props.batches).length;
     if (newLength !== this.state.batchLength) {
-      this.setState((prevState) => ({
-        batchLength: newLength,
-        time: prevState.time + 30
-      }));
+      this.setState((prevState) => {
+        let time = prevState.time + 30;
+        if (time > 30) {
+          time = 30;
+        }
+        return {
+          batchLength: newLength,
+          time: time
+        }
+      });
     }
   }
 
