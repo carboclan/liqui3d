@@ -56,6 +56,13 @@ func DefaultGenesisState() GenesisState {
 				CirculatingSupply: sdk.NewUintFromString("40000000000000000000000000"),
 				TotalSupply:       sdk.NewUintFromString("1000000000000000000000000000"),
 			},
+			{
+				ID:                store.NewEntityID(3),
+				Name:              "Reward Token",
+				Symbol:            "AHH",
+				CirculatingSupply: sdk.NewUintFromString("40000000000000000000000000"),
+				TotalSupply:       sdk.NewUintFromString("1000000000000000000000000000"),
+			},
 		},
 	}
 }
