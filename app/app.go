@@ -12,6 +12,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/tendermint/dex-demo/embedded/balance"
+	"github.com/tendermint/dex-demo/embedded/reward"
 	"github.com/tendermint/dex-demo/embedded/batch"
 	"github.com/tendermint/dex-demo/embedded/book"
 	"github.com/tendermint/dex-demo/embedded/fill"
@@ -237,6 +238,7 @@ func NewDexApp(
 	app.QueryRouter().
 		AddRoute("embeddedorder", embeddedorder.NewQuerier(embOrderKeeper)).
 		AddRoute("balance", balance.NewQuerier(app.AssetKeeper)).
+		AddRoute("reward", reward.NewQuerier(app.AssetKeeper)).
 		AddRoute("fill", fill.NewQuerier(fillKeeper)).
 		AddRoute("price", price.NewQuerier(priceKeeper)).
 		AddRoute("book", book.NewQuerier(embOrderKeeper)).
