@@ -11,6 +11,7 @@ import BalanceTable from "./BalanceTable";
 import CopyIcon from "../../components/ui/CopyIcon";
 import Button from "../../components/ui/Button";
 import {TRANSFER} from "../../constants/routes";
+import {CLAIM} from "../../constants/routes";
 import QRIcon from "../../components/QRIcon";
 import RewardTable from './RewardTable';
 
@@ -73,6 +74,14 @@ class WalletTable extends Component<Props, State> {
               onClick={() => this.props.history.push(TRANSFER)}
             >
               Transfer
+            </Button>
+          </div>
+          <div className="wallet__content__subheader__actions">
+            <Button
+              type="primary"
+              onClick={() => this.props.history.push(CLAIM)}
+            >
+              Claim
             </Button>
           </div>
         </div>
