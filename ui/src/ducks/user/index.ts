@@ -42,6 +42,9 @@ export type UserStateType = {
   balances: {
     [assetId: string]: BalanceType;
   };
+  rewards: {
+    [assetId: string]: RewardType;
+  };
   address: string;
   isLoggedIn?: boolean;
 };
@@ -51,6 +54,7 @@ const initialState = {
   orders: [],
   transactions: [],
   balances: {},
+  rewards: {},
   address: '',
   isLoggedIn: undefined
 };
@@ -164,8 +168,8 @@ export const fetchReward = () => async (
   try {
     const resp = await get('/user/rewards');
     const json: RewardResponse = await resp.json();
-
-    json.balances.forEach(balance => {
+    
+    json.rewards.forEach(balance => {
       dispatch(
         setReward({
           assetId: balance.asset_id,
@@ -189,6 +193,8 @@ export default function userReducer(
       return handleAddOrders(state, action);
     case SET_BALANCE:
       return handleSetBalance(state, action);
+    case SET_REWARD:
+      return handleSetReward(state, action);
     case ADD_USER_ADDRESS:
       return {
         ...state,
@@ -238,6 +244,20 @@ function handleSetBalance(
     ...state,
     balances: {
       ...state.balances,
+      [assetId]: action.payload
+    }
+  };
+}
+
+function handleSetReward(
+  state: UserStateType,
+  action: ActionType<RewardType>
+): UserStateType {
+  const { assetId } = action.payload;
+  return {
+    ...state,
+    rewards: {
+      ...state.rewards,
       [assetId]: action.payload
     }
   };

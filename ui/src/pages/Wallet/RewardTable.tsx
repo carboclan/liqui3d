@@ -68,7 +68,7 @@ class RewardTable extends Component<Props> {
 
 function mapStateToProps(state: REDUX_STATE): StateProps {
   return {
-    balances: state.user.balances,
+    balances: state.user.rewards,
     assets: state.assets.assets,
   };
 }

@@ -89,7 +89,7 @@ export type BalanceResponse = {
 }
 
 export type RewardResponse = {
-  balances: Reward[]
+  rewards: Reward[]
 }
 // asset_id: "2"
 // beneficiary: "0x7f751422e3ffcae90ae74049ff8aa5f3bc47335d"
