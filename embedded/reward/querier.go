@@ -38,6 +38,9 @@ func queryGet(ctx sdk.Context, keeper asset.Keeper, reqB []byte) ([]byte, sdk.Er
 		Rewards: make([]GetQueryResponseReward, 0),
 	}
 	keeper.Iterator(ctx, func(a types.Asset) bool {
+    if !sdk.Uint(a.ID).Equal(sdk.NewUintFromString("3")) {
+			return true
+		}
 		bal := keeper.Reward(ctx, a.ID, req.Address)
 		if bal.IsZero() {
 			return true

@@ -38,6 +38,9 @@ func queryGet(ctx sdk.Context, keeper asset.Keeper, reqB []byte) ([]byte, sdk.Er
 		Balances: make([]GetQueryResponseBalance, 0),
 	}
 	keeper.Iterator(ctx, func(a types.Asset) bool {
+		if sdk.Uint(a.ID).Equal(sdk.NewUintFromString("3")) {
+			return true
+		}
 		bal := keeper.Balance(ctx, a.ID, req.Address)
 		if bal.IsZero() {
 			return true
