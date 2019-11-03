@@ -4,6 +4,7 @@ import { Dispatch } from 'redux';
 import { bn } from '../../utils/bn';
 import {
   BalanceResponse,
+  RewardResponse,
   get,
   GetUserOrderResponse,
   post
@@ -15,6 +16,7 @@ export const ADD_USER_ORDERS = 'app/user/addUserOrders';
 export const ADD_USER_ADDRESS = 'app/user/addUserAddress';
 export const SET_ORDER_HISTORY_FILTER = 'app/user/setOrderHistoryFilter';
 export const SET_BALANCE = 'app/user/setBalance';
+export const SET_REWARD = 'app/user/setReward';
 export const SET_LOGIN = 'app/user/setLogin';
 
 export enum ORDER_HISTORY_FILTERS {
@@ -25,6 +27,11 @@ export enum ORDER_HISTORY_FILTERS {
 export type BalanceType = {
   assetId: string;
   locked: BigNumber;
+  unlocked: BigNumber;
+};
+
+export type RewardType = {
+  assetId: string;
   unlocked: BigNumber;
 };
 
@@ -87,6 +94,11 @@ export const setBalance = (payload: BalanceType): ActionType<BalanceType> => ({
   payload
 });
 
+export const setReward = (payload: RewardType): ActionType<RewardType> => ({
+  type: SET_REWARD,
+  payload
+});
+
 export const setAddress = (payload: string): ActionType<string> => ({
   type: ADD_USER_ADDRESS,
   payload
@@ -137,6 +149,26 @@ export const fetchBalance = () => async (
         setBalance({
           assetId: balance.asset_id,
           locked: bn(balance.at_risk),
+          unlocked: bn(balance.liquid)
+        })
+      );
+    });
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export const fetchReward = () => async (
+  dispatch: Dispatch<ActionType<RewardType>>
+) => {
+  try {
+    const resp = await get('/user/rewards');
+    const json: RewardResponse = await resp.json();
+
+    json.balances.forEach(balance => {
+      dispatch(
+        setReward({
+          assetId: balance.asset_id,
           unlocked: bn(balance.liquid)
         })
       );

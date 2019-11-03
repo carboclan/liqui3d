@@ -77,10 +77,20 @@ type Balance = {
   symbol: string
 }
 
+type Reward = {
+  asset_id: string
+  liquid: string
+  name: string
+  symbol: string
+}
+
 export type BalanceResponse = {
   balances: Balance[]
 }
 
+export type RewardResponse = {
+  balances: Reward[]
+}
 // asset_id: "2"
 // beneficiary: "0x7f751422e3ffcae90ae74049ff8aa5f3bc47335d"
 // burn_id: "4"

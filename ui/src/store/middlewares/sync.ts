@@ -9,13 +9,14 @@ import {
   setOpenBidsByMarketId,
 } from "../../ducks/exchange";
 import {get, OrderbookResponse} from "../../utils/fetch";
-import {fetchBalance, fetchUserOrders} from "../../ducks/user";
+import {fetchBalance, fetchReward, fetchUserOrders} from "../../ducks/user";
 import {ThunkDispatch} from "redux-thunk";
 
 let watchDepthTimeout: any;
 let watchOrderHistoryTimeout: any;
 let watchWithdrawalsTimeout: any;
 let watchBalanceTimeout: any;
+let watchRewardTimeout: any;
 let watchDepositStatusTimeout: any;
 let watchBatchTimeout: any;
 
@@ -30,6 +31,7 @@ const syncMiddleware = (store: Store) => {
         handleFetchBook(getState, action, dispatch);
         handleOrderHistory(getState, action, dispatch);
         handleBalance(getState, action, dispatch);
+        handleReward(getState, action, dispatch);
         handleBatch(getState, action, dispatch);
         return;
       case SET_CHART_INTERVAL:
@@ -101,5 +103,16 @@ function handleBalance(getState: () => REDUX_STATE, action: ActionType<any>, dis
   async function getDaily() {
     await dispatch(fetchBalance());
     watchBalanceTimeout = setTimeout(getDaily, 2000);
+  }
+}
+
+function handleReward(getState: () => REDUX_STATE, action: ActionType<any>, dispatch: ThunkDispatch<REDUX_STATE, any, ActionType<any>>) {
+  if (!watchRewardTimeout) {
+    watchRewardTimeout = setTimeout(getDaily, 0);
+  }
+
+  async function getDaily() {
+    await dispatch(fetchReward());
+    watchRewardTimeout = setTimeout(getDaily, 2000);
   }
 }

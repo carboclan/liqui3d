@@ -3,13 +3,13 @@ import {connect} from "react-redux";
 import {REDUX_STATE} from "../../ducks";
 import {Dispatch} from "redux";
 import {Table, TableCell, TableHeader, TableHeaderRow, TableRow} from "../../components/ui/Table";
-import {BalanceType} from "../../ducks/user";
+import {RewardType} from "../../ducks/user";
 import {AssetType} from "../../ducks/assets";
 import "./style/balance-table.scss";
 
 type StateProps = {
   balances: {
-    [assetId: string]: BalanceType
+    [assetId: string]: RewardType
   }
   assets: {
     [assetId: string]: AssetType
@@ -52,15 +52,15 @@ class RewardTable extends Component<Props> {
     );
   }
 
-  renderTableRow (balance: BalanceType): ReactNode {
+  renderTableRow (balance: RewardType): ReactNode {
     const { assets } = this.props;
-    const { assetId, locked, unlocked } = balance;
+    const { assetId, unlocked } = balance;
     const { symbol, decimals, name } = assets[assetId];
 
     return (
       <TableRow key={symbol}>
         <TableCell>{symbol} - {name}</TableCell>
-        <TableCell>{unlocked.plus(locked).dividedBy(10 ** decimals).toFixed(4)}</TableCell>
+        <TableCell>{unlocked.dividedBy(10 ** decimals).toFixed(4)}</TableCell>
       </TableRow>
     )
   }
