@@ -159,6 +159,12 @@ func (k Keeper) Balance(ctx sdk.Context, id store.EntityID, owner sdk.AccAddress
 	return sdk.NewUintFromBigInt(out.BigInt())
 }
 
+func (k Keeper) Reward(ctx sdk.Context, id store.EntityID, owner sdk.AccAddress) sdk.Uint {
+	coins := k.bankKeeper.GetCoins(ctx, owner)
+	out := coins.AmountOf(store.FormatDenom(id))
+	return sdk.NewUintFromBigInt(out.BigInt())
+}
+
 func (k Keeper) incrementSeq(ctx sdk.Context) store.EntityID {
 	assetNum := store.IncrementSeq(ctx, k.storeKey, []byte(seqKey))
 	return store.EntityID(assetNum)
