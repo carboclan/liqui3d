@@ -251,6 +251,9 @@ func (k Keeper) processJackpot(ctx sdk.Context, mkt markettypes.Market, height i
 		payout := poolBalanceInt.Div(poolBalanceInt, big.NewInt(2))
 
 		participants := lastBatch.Participants
+		if len(participants) == 0 {
+			return nil
+		}
 		each := payout.Div(payout, big.NewInt(int64(len(participants))))
 
 		for _, participant := range participants {
