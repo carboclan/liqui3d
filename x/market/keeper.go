@@ -48,6 +48,18 @@ func (k Keeper) Create(ctx sdk.Context, baseAsset store.EntityID, quoteAsset sto
 	return market
 }
 
+func (k Keeper) RecordLastBatch(ctx sdk.Context, marketId store.EntityID, lastBatch types.Batch) {
+	market, err := k.Get(ctx, marketId)
+	if err != nil {
+		panic(err)
+	}
+	market.LastBatch = lastBatch
+	err = store.SetExists(ctx, k.storeKey, k.cdc, marketKey(marketId), market)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (k Keeper) Inject(ctx sdk.Context, market types.Market) {
 	seq := store.GetSeq(ctx, k.storeKey, []byte(seqKey))
 

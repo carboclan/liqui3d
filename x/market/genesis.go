@@ -36,12 +36,14 @@ func ValidateGenesis(data GenesisState) error {
 }
 
 func DefaultGenesisState() GenesisState {
+	rewardPool, _ := sdk.AccAddressFromHex("cosmos1j689jv788xfhmvm27pgz0f7uvxjxz8tmuw2yqf")
 	return GenesisState{
 		Markets: []types.Market{
 			{
 				ID:           store.NewEntityID(1),
 				BaseAssetID:  store.NewEntityID(2),
 				QuoteAssetID: store.NewEntityID(1),
+				RewardPool:   rewardPool,
 			},
 		},
 	}

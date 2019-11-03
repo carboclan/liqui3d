@@ -12,12 +12,12 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/tendermint/dex-demo/embedded/balance"
-	"github.com/tendermint/dex-demo/embedded/reward"
 	"github.com/tendermint/dex-demo/embedded/batch"
 	"github.com/tendermint/dex-demo/embedded/book"
 	"github.com/tendermint/dex-demo/embedded/fill"
 	embeddedorder "github.com/tendermint/dex-demo/embedded/order"
 	"github.com/tendermint/dex-demo/embedded/price"
+	"github.com/tendermint/dex-demo/embedded/reward"
 	"github.com/tendermint/dex-demo/execution"
 	"github.com/tendermint/dex-demo/types"
 	"github.com/tendermint/dex-demo/x/asset"
@@ -205,6 +205,7 @@ func NewDexApp(
 	)
 	app.ExecKeeper = execution.NewKeeper(
 		queue,
+		app.AssetKeeper,
 		app.MarketKeeper,
 		app.OrderKeeper,
 		app.BankKeeper,

@@ -37,3 +37,9 @@ func New(owner sdk.AccAddress, marketID store.EntityID, direction matcheng.Direc
 		CreatedBlock:      created,
 	}
 }
+
+type OrderByBlock struct {
+	ID store.EntityID
+	Owner sdk.AccAddress
+	BlockHeight int64
+}

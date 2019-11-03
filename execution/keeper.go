@@ -8,8 +8,10 @@ import (
 	"github.com/tendermint/dex-demo/pkg/matcheng"
 	"github.com/tendermint/dex-demo/types"
 	"github.com/tendermint/dex-demo/types/store"
+	"github.com/tendermint/dex-demo/x/asset"
 	assettypes "github.com/tendermint/dex-demo/x/asset/types"
 	"github.com/tendermint/dex-demo/x/market"
+	markettypes "github.com/tendermint/dex-demo/x/market/types"
 	"github.com/tendermint/dex-demo/x/order"
 	types2 "github.com/tendermint/dex-demo/x/order/types"
 
@@ -19,6 +21,7 @@ import (
 
 type Keeper struct {
 	queue     types.Backend
+	ak        asset.Keeper
 	mk        market.Keeper
 	ordK      order.Keeper
 	bk        bank.Keeper
@@ -33,13 +36,12 @@ type matcherByMarket struct {
 
 var logger = log.WithModule("execution")
 
-const commission = 0.001
-
 var rewardEntityId = store.NewEntityID(3)
 
-func NewKeeper(queue types.Backend, mk market.Keeper, ordK order.Keeper, bk bank.Keeper) Keeper {
+func NewKeeper(queue types.Backend, ak asset.Keeper, mk market.Keeper, ordK order.Keeper, bk bank.Keeper) Keeper {
 	return Keeper{
 		queue:   queue,
+		ak:      ak,
 		mk:      mk,
 		ordK:    ordK,
 		bk:      bk,
@@ -75,10 +77,22 @@ func (k Keeper) ExecuteAndCancelExpired(ctx sdk.Context) sdk.Error {
 		return true
 	})
 
+	if len(matchersByMarket) == 0 {
+		k.mk.Iterator(ctx, func(mkt markettypes.Market) bool {
+			k.processJackpot(ctx, mkt, height)
+			return true
+		})
+	}
+
 	var toFill []*matcheng.MatchResults
 	for _, m := range matchersByMarket {
 		res := m.matcher.Match()
 		if res == nil {
+			market, err := k.mk.Get(ctx, m.mktID)
+			if err != nil {
+				return err
+			}
+			k.processJackpot(ctx, market, height)
 			continue
 		}
 
@@ -92,6 +106,17 @@ func (k Keeper) ExecuteAndCancelExpired(ctx sdk.Context) sdk.Error {
 		})
 		toFill = append(toFill, res)
 		matcheng.ReturnMatcher(m.matcher)
+
+		participants := make([]sdk.AccAddress, len(res.Fills))
+		for i, fill := range res.Fills {
+			order, err := k.ordK.Get(ctx, fill.OrderID)
+			if err != nil {
+				return err
+			}
+			participants[i] = order.Owner
+		}
+		lastBatch := markettypes.Batch{BlockHeight: height, Participants: participants}
+		k.mk.RecordLastBatch(ctx, m.mktID, lastBatch)
 	}
 	var fillCount int
 	for _, res := range toFill {
@@ -127,16 +152,20 @@ func (k Keeper) ExecuteFill(ctx sdk.Context, clearingPrice sdk.Uint, f matcheng.
 
 	if ord.Direction == matcheng.Bid {
 		quoteAmount := f.QtyFilled
-		quoteAmountFloat, _ := new(big.Float).SetString(quoteAmount.String())
-		commission := quoteAmountFloat.Mul(quoteAmountFloat, big.NewFloat(commission))
-		commissionInt, _ := new(big.Int).SetString(commission.String(), 10)
-		commissionUint := sdk.NewUintFromBigInt(commissionInt)
+		quoteAmountInt, _ := new(big.Int).SetString(quoteAmount.String(), 10)
+		mult := quoteAmountInt.Mul(quoteAmountInt, big.NewInt(999))
+		commission := mult.Div(mult, big.NewInt(1000))
+		commissionUint := sdk.NewUintFromBigInt(commission)
 		actualQuoteAmountUint := quoteAmount.Sub(commissionUint)
 		_, err = k.bk.AddCoins(ctx, ord.Owner, assettypes.Coins(mkt.BaseAssetID, actualQuoteAmountUint))
 		if err != nil {
 			return err
 		}
 		_, err = k.bk.AddCoins(ctx, ord.Owner, assettypes.Coins(rewardEntityId, commissionUint))
+		if err != nil {
+			return err
+		}
+		_, err = k.bk.AddCoins(ctx, mkt.RewardPool, assettypes.Coins(rewardEntityId, commissionUint))
 		if err != nil {
 			return err
 		}
@@ -159,10 +188,10 @@ func (k Keeper) ExecuteFill(ctx sdk.Context, clearingPrice sdk.Uint, f matcheng.
 		}
 	} else {
 		quoteAmount := f.QtyFilled
-		quoteAmountFloat, _ := new(big.Float).SetString(quoteAmount.String())
-		commission := quoteAmountFloat.Mul(quoteAmountFloat, big.NewFloat(commission))
-		commissionInt, _ := new(big.Int).SetString(commission.String(), 10)
-		commissionUint := sdk.NewUintFromBigInt(commissionInt)
+		quoteAmountInt, _ := new(big.Int).SetString(quoteAmount.String(), 10)
+		mult := quoteAmountInt.Mul(quoteAmountInt, big.NewInt(999))
+		commission := mult.Div(mult, big.NewInt(1000))
+		commissionUint := sdk.NewUintFromBigInt(commission)
 		actualQuoteAmountUint := quoteAmount.Sub(commissionUint)
 
 		baseAmount, qErr := matcheng.NormalizeQuoteQuantity(clearingPrice, actualQuoteAmountUint)
@@ -172,6 +201,10 @@ func (k Keeper) ExecuteFill(ctx sdk.Context, clearingPrice sdk.Uint, f matcheng.
 				return err
 			}
 			_, err = k.bk.AddCoins(ctx, ord.Owner, assettypes.Coins(rewardEntityId, commissionUint))
+			if err != nil {
+				return err
+			}
+			_, err = k.bk.AddCoins(ctx, mkt.RewardPool, assettypes.Coins(rewardEntityId, commissionUint))
 			if err != nil {
 				return err
 			}
@@ -205,6 +238,34 @@ func (k Keeper) ExecuteFill(ctx sdk.Context, clearingPrice sdk.Uint, f matcheng.
 		BlockTime:   ctx.BlockHeader().Time.Unix(),
 		Price:       clearingPrice,
 	})
+	return nil
+}
+
+func (k Keeper) processJackpot(ctx sdk.Context, mkt markettypes.Market, height int64) error {
+	lastBatch := mkt.LastBatch
+	logger.Info("No match!!!", height, lastBatch.BlockHeight)
+	if height-lastBatch.BlockHeight > 5 && lastBatch.BlockHeight != -1 {
+		// Jackpot!
+		poolBalance := k.ak.Balance(ctx, rewardEntityId, mkt.RewardPool)
+		poolBalanceInt, _ := new(big.Int).SetString(poolBalance.String(), 10)
+		payout := poolBalanceInt.Div(poolBalanceInt, big.NewInt(2))
+
+		participants := lastBatch.Participants
+		each := payout.Div(payout, big.NewInt(int64(len(participants))))
+
+		for _, participant := range participants {
+			_, err := k.bk.AddCoins(ctx, participant, assettypes.Coins(rewardEntityId, sdk.NewUintFromBigInt(each)))
+			if err != nil {
+				return err
+			}
+		}
+		_, err := k.bk.SubtractCoins(ctx, mkt.RewardPool, assettypes.Coins(rewardEntityId, sdk.NewUintFromBigInt(payout)))
+		if err != nil {
+			return err
+		}
+		k.mk.RecordLastBatch(ctx, mkt.ID, markettypes.Batch{BlockHeight: -1})
+		logger.Info("Jackpot!!!")
+	}
 	return nil
 }
 
