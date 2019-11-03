@@ -83,8 +83,12 @@ class List extends Component<PropTypes, State> {
   }
 
   tick = () => {
+    if (this.state.time === 0 || Object.keys(this.props.batches).length === 0) {
+      return;
+    }
+
     if (this.state.time === 1) {
-      // this.props.close();
+      this.setState({time: 30});
       return;
     }
 
