@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"math/big"
 	"time"
 
 	"github.com/tendermint/dex-demo/pkg/log"
@@ -31,6 +32,10 @@ type matcherByMarket struct {
 }
 
 var logger = log.WithModule("execution")
+
+const commission = 0.001
+
+var rewardEntityId = store.NewEntityID(3)
 
 func NewKeeper(queue types.Backend, mk market.Keeper, ordK order.Keeper, bk bank.Keeper) Keeper {
 	return Keeper{
@@ -122,7 +127,16 @@ func (k Keeper) ExecuteFill(ctx sdk.Context, clearingPrice sdk.Uint, f matcheng.
 
 	if ord.Direction == matcheng.Bid {
 		quoteAmount := f.QtyFilled
-		_, err = k.bk.AddCoins(ctx, ord.Owner, assettypes.Coins(mkt.BaseAssetID, quoteAmount))
+		quoteAmountFloat, _ := new(big.Float).SetString(quoteAmount.String())
+		commission := quoteAmountFloat.Mul(quoteAmountFloat, big.NewFloat(commission))
+		commissionInt, _ := new(big.Int).SetString(commission.String(), 10)
+		commissionUint := sdk.NewUintFromBigInt(commissionInt)
+		actualQuoteAmountUint := quoteAmount.Sub(commissionUint)
+		_, err = k.bk.AddCoins(ctx, ord.Owner, assettypes.Coins(mkt.BaseAssetID, actualQuoteAmountUint))
+		if err != nil {
+			return err
+		}
+		_, err = k.bk.AddCoins(ctx, ord.Owner, assettypes.Coins(rewardEntityId, commissionUint))
 		if err != nil {
 			return err
 		}
@@ -144,9 +158,20 @@ func (k Keeper) ExecuteFill(ctx sdk.Context, clearingPrice sdk.Uint, f matcheng.
 			}
 		}
 	} else {
-		baseAmount, qErr := matcheng.NormalizeQuoteQuantity(clearingPrice, f.QtyFilled)
+		quoteAmount := f.QtyFilled
+		quoteAmountFloat, _ := new(big.Float).SetString(quoteAmount.String())
+		commission := quoteAmountFloat.Mul(quoteAmountFloat, big.NewFloat(commission))
+		commissionInt, _ := new(big.Int).SetString(commission.String(), 10)
+		commissionUint := sdk.NewUintFromBigInt(commissionInt)
+		actualQuoteAmountUint := quoteAmount.Sub(commissionUint)
+
+		baseAmount, qErr := matcheng.NormalizeQuoteQuantity(clearingPrice, actualQuoteAmountUint)
 		if qErr == nil {
 			_, err = k.bk.AddCoins(ctx, ord.Owner, assettypes.Coins(mkt.QuoteAssetID, baseAmount))
+			if err != nil {
+				return err
+			}
+			_, err = k.bk.AddCoins(ctx, ord.Owner, assettypes.Coins(rewardEntityId, commissionUint))
 			if err != nil {
 				return err
 			}
