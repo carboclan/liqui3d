@@ -32,7 +32,7 @@ export type BalanceType = {
 
 export type RewardType = {
   assetId: string;
-  unlocked: BigNumber;
+  balance: BigNumber;
 };
 
 export type UserStateType = {
@@ -173,7 +173,7 @@ export const fetchReward = () => async (
       dispatch(
         setReward({
           assetId: balance.asset_id,
-          unlocked: bn(balance.liquid)
+          balance: bn(balance.liquid)
         })
       );
     });

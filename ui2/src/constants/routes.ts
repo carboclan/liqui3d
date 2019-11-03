@@ -10,3 +10,4 @@ export const CONFIRM_SEEDPHRASE_BACKUP__SOFTWARE: string = "/wallet/create/softw
 export const DEPOSIT: string = "/wallet/deposit";
 export const WITHDRAWAL: string = "/wallet/withdrawal";
 export const TRANSFER: string = "/wallet/transfer";
+export const CLAIM: string = "/wallet/claim";
