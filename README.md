@@ -89,3 +89,61 @@ Unit tests can be run via `make test-unit`. Unit tests are marked as such via ca
 
 Integration tests can be run via `make test`. Note that this will build all tools prior to execution. Integration tests execute against the CLI. As such, they are somewhat resource-intensive and slow.
 
+# Game Design
+
+Liqui3D: Game of DEXes is a gamification of trading activity on a DEX in order to increase liquidity.
+
+## Inspiration
+
+Inspired by the "War of Attrition" game behind FOMO3D, we built Liqui3D to allow for the bottom-up emergence of liquidity, particularly among less popular cryptoasset pairs that fall in the long-tail of all traded cryptoasset pairs on a DEX.
+
+## Protocol 
+
+### Game start
+
+Multiple players place trades of a given trading pair (like ETH-BTC, DOGE-ETH). The transaction fees - typically a percentage of the traded amount - associated with their trades are collected in the pot. 
+
+In the beginning, the _POT_ contains the sum of all transaction fees from all players who have placed trades of this specific trading pair. 
+
+Depending on how big is your order and how liquid this trading pair is, there will be some transaction fees.
+The transaction fees is directly proportional to the amount being traded
+The transaction fees is inversely proportional to the liquidity of the trading pair. 
+
+For example, the initial transaction fee is 1%, if only 10 trades happened in the last 5 mins, we are going to increase the transaction fee, because traders would be willing to pay a little more to make the trade happen faster.
+If the trading pair is very popular, like ETH/BTC, the transaction fee will be very low, because there is no need to increase liquidity at this point. 
+
+The POT smart contract details the amount of transaction fees that belongs to each player. 
+A portion of the Amount in POT continuously remains in the POT, and the remaining portion of it is given as a contribution to the global lottery pool. 
+
+### Game Timer
+The countdown will start after a certain pot size. The init countdown is 1 minute. When any trade happens, the countdown timer will accumulate a little more time. The max countdown time is 1 hour. If there is no trade happen when the countdown comes to 0, this round ends.
+
+###24 hour periodic redistribution: Local weighted lottery
+The trading transaction fees collected from all players is pooled into the local_lottery_pool. 10% of the cumulative amount from the pot gets assigned as the lottery_prize. 
+
+Every 24 hours, one player out of all the existing players is randomly chosen. The chosen player wins the lottery_prize. 
+
+The likelihood of winning is proportional to the player’s relative contributions to the pot. i.e. the amount of transaction fees they contributed to the pot cumulatively.
+
+P(Player1 wins) = (Player1's total contributions to the POT) / (Total amount in POT)
+
+**Justification for local lottery vs. global lottery**
+
+A global lottery would motivate players to create new esoteric shitcoins, just so they would have a greater likelihood of winning the global lottery. By protocol, esoteric shitcoin pairs would be assigned higher transaction fees, thus building a larger pot relative to the amount being traded. 
+
+A larger pot would mean the probability of winning the global lottery is higher too. Thus, global lotteries indirectly encourage the creation of new esoteric shitcoins.
+
+**Justification for allocating portion of cumulative amount in POT vs. portion of trades placed in the last 24 hours**
+Introducing such temporal nuances may give room for the development of attack vectors related to time of order placement. One such scenario would be when multiple players agree via an external side contract to all place their orders on the same day, such that they pump up the local_lottery_pool for the upcoming lottery. A player would agree to such a contract with the incentive being saving on opportunity cost, or effort (i.e. akin to laziness, you’d rather place a high volume of trades on the same day and take the next day off). 
+
+This would drive game dynamics to entertain short spans of high trading volumes, which is undesirable as we want continuous and consistently high volumes of liquidity through time. 
+
+
+### End of game
+When round ends, the last person who made the trade will take 50% of the pot, the 25% of the pot money goes back to the participants, the last 25% goes to the next round.
+
+If the game just goes on forever, at some point, we will distribute some of the pot money back to the participants.
+
+## Next Steps
+* Validate protocol design decisions via a multi-agent simulation
+
